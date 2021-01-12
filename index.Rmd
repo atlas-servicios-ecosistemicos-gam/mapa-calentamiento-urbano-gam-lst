@@ -39,7 +39,6 @@ sf_limite_gam_web <-
 # Capa raster de temperatura superficial (en Web Mercator)
 raster_temperatura_superficial <-
   raster(url_raster_temperatura_superficial) %>%
-  aggregate(fact=2, fun=modal) %>% # ¡¡HAY QUE TRATAR DE ELIMINAR ESTA AGRUPACIÓN. PODRÍA FUNCIONAR AL USAR MÁS MEMORIA LINUX!!
   crop(sf_limite_gam_web) %>%
   mask(sf_limite_gam_web)
 
@@ -65,7 +64,7 @@ Row
 ```{r}
 
 leaflet() %>%
-  setView((-84.11961 + -83.97383)/2, (9.907672 + 9.94576)/2, 10) %>%
+  # setView((-84.11961 + -83.97383)/2, (9.907672 + 9.94576)/2, 10) %>%
   addProviderTiles(providers$CartoDB.DarkMatter, group = "CartoDB Dark Matter") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group = "OpenStreetMap") %>%
   addProviderTiles(providers$Stamen.TonerLite, group = "Stamen Toner Lite") %>%
