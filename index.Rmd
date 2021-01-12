@@ -1,0 +1,112 @@
+---
+title: "Mapa de temperatura superficial en la Gran Área Metropolitana"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+#-------------------- Paquetes --------------------
+
+library(flexdashboard)
+library(dplyr)
+library(sf)
+library(leaflet)
+library(leafem)
+library(esri2sf)
+library(raster)
+
+#--------------- URL de geoservicios --------------
+
+url_agfs_limite_gam <-
+  "https://services9.arcgis.com/RrvMEynxDB8hycVO/arcgis/rest/services/gam_limite_gam/FeatureServer/0"
+
+url_raster_temperatura_superficial <-
+  "https://raw.githubusercontent.com/atlas-servicios-ecosistemicos-gam/datos-calentamiento-urbano/master/gam/LST_GAM_WEB.TIF"
+
+#--------------- Objetos sf y raster ---------------
+
+# Límite de la GAM
+sf_limite_gam <-
+  esri2sf(url_agfs_limite_gam)
+
+# Límite de la GAM (reproyectado a Web Mercator)
+sf_limite_gam_web <- 
+  sf_limite_gam %>%
+  st_transform(3857)
+
+# Capa raster de temperatura superficial (en Web Mercator)
+raster_temperatura_superficial <-
+  raster(url_raster_temperatura_superficial) %>%
+  aggregate(fact=2, fun=modal) %>% # ¡¡HAY QUE TRATAR DE ELIMINAR ESTA AGRUPACIÓN. PODRÍA FUNCIONAR AL USAR MÁS MEMORIA LINUX!!
+  crop(sf_limite_gam_web) %>%
+  mask(sf_limite_gam_web)
+
+#---------------- Paletas de colores ---------------
+
+# Probabilidad
+colores_temperatura_superficial <- c("blue", "green", "yellow", "red")
+etiquetas_temperatura_superficial <- c("Baja", "Media", "MA", "Alta")
+pal_temperatura_superficial <- 
+  colorNumeric(
+    colores_temperatura_superficial, 
+    values(raster_temperatura_superficial),
+    na.color = "transparent"
+  )
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### 
+
+```{r}
+
+leaflet() %>%
+  setView((-84.11961 + -83.97383)/2, (9.907672 + 9.94576)/2, 10) %>%
+  addProviderTiles(providers$CartoDB.DarkMatter, group = "CartoDB Dark Matter") %>%
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group = "OpenStreetMap") %>%
+  addProviderTiles(providers$Stamen.TonerLite, group = "Stamen Toner Lite") %>%
+  addProviderTiles(providers$Esri.WorldImagery, group = "Imágenes de ESRI") %>%
+  addPolygons(
+    data = sf_limite_gam,
+    color = "Purple",
+    fillColor = "transparent",
+    stroke = TRUE,
+    weight = 6.0,
+    group = "Límite de la GAM"
+  ) %>%
+  addRasterImage(
+    raster_temperatura_superficial, 
+    colors = pal_temperatura_superficial,
+    opacity = 0.9,
+    group = "Temperatura superficial"
+  ) %>%  
+  addLegend(
+    title = "Temperatura superficial",
+    values = values(raster_temperatura_superficial),
+    pal = pal_temperatura_superficial,
+    #colors = colores_temperatura_superficial,
+    #labels = etiquetas_temperatura_superficial,
+    position = "bottomright",
+    group = "Temperatura superficial"
+  ) %>%    
+  addLayersControl(
+    baseGroups = c("CartoDB Dark Matter", "OpenStreetMap", "Stamen Toner Lite", "Imágenes de ESRI"),
+    overlayGroups = c("Límite de la GAM", "Temperatura superficial"),
+    options = layersControlOptions(collapsed = TRUE)    
+  ) %>%  
+  addMiniMap(
+    toggleDisplay = TRUE,
+    position = "bottomleft",
+    tiles = providers$CartoDB.DarkMatter
+  ) %>%
+  addScaleBar(
+    position = "bottomleft",
+    options = scaleBarOptions(imperial = FALSE)
+  ) %>%
+  addMouseCoordinates()
+
+```
