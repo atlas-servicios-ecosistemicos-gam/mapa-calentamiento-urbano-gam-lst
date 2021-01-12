@@ -22,7 +22,7 @@ library(raster)
 url_agfs_limite_gam <-
   "https://services9.arcgis.com/RrvMEynxDB8hycVO/arcgis/rest/services/gam_limite_gam/FeatureServer/0"
 
-url_raster_temperatura_superficial <-
+url_raster_temperatura <-
   "https://raw.githubusercontent.com/atlas-servicios-ecosistemicos-gam/datos-calentamiento-urbano/master/gam/LST_GAM_WEB.TIF"
 
 #--------------- Objetos sf y raster ---------------
@@ -36,21 +36,21 @@ sf_limite_gam_web <-
   sf_limite_gam %>%
   st_transform(3857)
 
-# Capa raster de temperatura superficial (en Web Mercator)
-raster_temperatura_superficial <-
-  raster(url_raster_temperatura_superficial) %>%
+# Capa raster de temperatura (en Web Mercator)
+raster_temperatura <-
+  raster(url_raster_temperatura) %>%
   crop(sf_limite_gam_web) %>%
   mask(sf_limite_gam_web)
 
 #---------------- Paletas de colores ---------------
 
 # Probabilidad
-colores_temperatura_superficial <- c("blue", "green", "yellow", "red")
-etiquetas_temperatura_superficial <- c("Baja", "Media", "MA", "Alta")
-pal_temperatura_superficial <- 
+colores_temperatura <- c("blue", "green", "yellow", "red")
+etiquetas_temperatura <- c("Baja", "Media", "MA", "Alta")
+pal_temperatura <- 
   colorNumeric(
-    colores_temperatura_superficial, 
-    values(raster_temperatura_superficial),
+    colores_temperatura, 
+    values(raster_temperatura),
     na.color = "transparent"
   )
 
@@ -64,7 +64,6 @@ Row
 ```{r}
 
 leaflet() %>%
-  # setView((-84.11961 + -83.97383)/2, (9.907672 + 9.94576)/2, 10) %>%
   addProviderTiles(providers$CartoDB.DarkMatter, group = "CartoDB Dark Matter") %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik, group = "OpenStreetMap") %>%
   addProviderTiles(providers$Stamen.TonerLite, group = "Stamen Toner Lite") %>%
@@ -78,23 +77,21 @@ leaflet() %>%
     group = "Límite de la GAM"
   ) %>%
   addRasterImage(
-    raster_temperatura_superficial, 
-    colors = pal_temperatura_superficial,
+    raster_temperatura, 
+    colors = pal_temperatura,
     opacity = 0.9,
-    group = "Temperatura superficial"
+    group = "Temperatura"
   ) %>%  
   addLegend(
-    title = "Temperatura superficial",
-    values = values(raster_temperatura_superficial),
-    pal = pal_temperatura_superficial,
-    #colors = colores_temperatura_superficial,
-    #labels = etiquetas_temperatura_superficial,
+    title = "Temperatura (°C)",
+    values = values(raster_temperatura),
+    pal = pal_temperatura,
     position = "bottomright",
-    group = "Temperatura superficial"
+    group = "Temperatura"
   ) %>%    
   addLayersControl(
     baseGroups = c("CartoDB Dark Matter", "OpenStreetMap", "Stamen Toner Lite", "Imágenes de ESRI"),
-    overlayGroups = c("Límite de la GAM", "Temperatura superficial"),
+    overlayGroups = c("Límite de la GAM", "Temperatura"),
     options = layersControlOptions(collapsed = TRUE)    
   ) %>%  
   addMiniMap(
