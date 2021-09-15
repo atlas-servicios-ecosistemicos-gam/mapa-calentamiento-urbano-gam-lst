@@ -44,6 +44,11 @@ raster_lst <-
   crop(sf_limite_gam_web) %>%
   mask(sf_limite_gam_web)
 
+raster_lst[raster_lst==65535] <- NA
+min_raster_lst <- format(cellStats(raster_lst, stat='min'), digits=3, nsmall=1)
+max_raster_lst <- format(cellStats(raster_lst, stat='max'), digits=3, nsmall=1)
+mean_raster_lst <- format(cellStats(raster_lst, stat='mean'), digits=3, nsmall=1)
+
 #---------------- Paletas de colores ---------------
 
 # LST
@@ -57,7 +62,7 @@ pal_lst <-
 
 ```
 
-Row
+Row {data-height=800}
 -----------------------------------------------------------------------
 
 ### 
@@ -109,4 +114,32 @@ leaflet() %>%
   addSearchOSM() %>%
   addResetMapButton() %>%
   addOpacitySlider(layerId = "raster")
+```
+
+
+Row {data-height=200}
+-----------------------------------------------------------------------
+
+### Temperatura mínima {.value-box} {data-width=333}
+```{r}
+valueBox(
+  value = "LST mínima", 
+  caption = paste("<h2><strong>", min_raster_lst,  "°C</strong></h2>")
+)
+```
+
+### Temperatura máxima {.value-box} {data-width=333}
+```{r}
+valueBox(
+  value = "LST máxima", 
+  caption = paste("<h2><strong>", max_raster_lst,  "°C</strong></h2>")
+)
+```
+
+### Temperatura promedio {.value-box} {data-width=333}
+```{r}
+valueBox(
+  value = "LST promedio", 
+  caption = paste("<h2><strong>", mean_raster_lst,  "°C</strong></h2>")
+)
 ```
